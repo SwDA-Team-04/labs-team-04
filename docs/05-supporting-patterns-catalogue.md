@@ -97,4 +97,4 @@ Rather than storing only the current `status` of a `Communications` document, st
 
 ---
 
-**Previous:** [04 — The Strangler Fig Pattern](04-strangler-fig-pattern.md)
+**Previous:** [04 — The Strangler Fig Pattern](04-strangler-fig-pattern.md) · **Next:** [06 — Lab 1 Step by Step](06-lab1-step-by-step.md)
