@@ -25,7 +25,7 @@ const Communications: CollectionConfig = {
   admin: {
     ...collectionUtils.GeneratePreviewConfig(),
     useAsTitle: "subject",
-    defaultColumns: ["subject", "tos"],
+    defaultColumns: ["subject", "tos", "status"],
     group: "Notifications",
     disableDuplicate: true,
     enableRichTextRelationship: false,
@@ -33,6 +33,17 @@ const Communications: CollectionConfig = {
   hooks: {
     afterChange: [
       async ({ doc }) => {
+        if (doc.status === "pending" || doc.status === "sent") {
+          return;
+        }
+        if (process.env.COMMUNICATIONS_EXTERNAL_WORKER === "true") {
+          await payload.update({
+            collection: Slugs.Communications,
+            id: doc.id,
+            data: { status: "pending" },
+          });
+          return; // returns immediately
+        }
         const { tos, ccs, bccs, subject, body } = doc;
         for (const part of body) {
           if (part.type !== "upload") {
@@ -104,6 +115,11 @@ const Communications: CollectionConfig = {
             );
           }
           await Promise.all(promises.filter((p) => Boolean(p)));
+          await payload.update({
+            collection: Slugs.Communications,
+            id: doc.id,
+            data: { status: "sent" },
+          });
           return doc;
         } catch (err) {
           if (err.response && err.response.body && err.response.body.errors) {
@@ -212,6 +228,20 @@ const Communications: CollectionConfig = {
       type: "richText",
       required: true,
     },
+    {
+      name: "status",
+      type: "select" ,
+      options: [
+        { label: 'Pending', value: 'pending' },
+        { label: 'Processing', value: 'processing' },
+        { label: 'Sent', value: 'sent' },
+        { label: 'Failed', value: 'failed' },
+      ],
+      admin: {
+        readOnly: true,
+        position: 'sidebar',
+      },
+    }
   ],
 };
 
